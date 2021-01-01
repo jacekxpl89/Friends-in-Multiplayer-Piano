@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      1.0
 // @description  Adds new features to MPP including add friends, do not show again, Direct Messaging etc.
-// @author       MajorH
+// @author       MajorH (Thanks anonygold)
 // @match        https://www.multiplayerpiano.com/*
 // @grant        none
 // ==/UserScript==
