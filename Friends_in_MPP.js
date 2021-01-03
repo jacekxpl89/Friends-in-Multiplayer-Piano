@@ -476,6 +476,32 @@ function addClick(object, playerid, p) {
 					connectingText.innerHTML += ".";
 					}}, 100);
 
+
+					setTimeout(function(){
+					if(authenticationStatus===undefined || authenticationStatus===null){
+						stopDots=true
+						connectingText.style.color = 'red';
+						connectingText.innerHTML = "AUTHENTICATION FAILED. REASON: TIMEOUT";
+						cancelButton.style.color = 'red';
+						cancelButton.innerHTML = 'Failure!';
+						}
+					if(authenticationStatus===true){
+						stopDots=true
+						connectingText.style.color = 'lime';
+						connectingText.innerHTML = "AUTHENTICATION SUCCESS. IP TIED TO ID.";
+						cancelButton.style.color = 'lime';
+						cancelButton.innerHTML = 'Success!';
+					}
+					if(authenticationStatus===false){
+						stopDots=true
+						connectingText.style.color = 'red';
+						connectingText.innerHTML = "AUTHENTICATION FAILED. REASON: AUTHORIZATION CODE ERROR.";
+						cancelButton.style.color = 'red';
+						cancelButton.innerHTML = 'Failure!';
+					}
+				}, 30000)
+
+
 				cancelButton.onclick = () => {
 					document.getElementById('verifyUserPrompt-window').remove()
 				};
