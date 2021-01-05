@@ -158,6 +158,10 @@ function checkFriendHTML(playerid, p) {
 // -- //
 // ADD FRIEND MENU ITEM:
 MPP.client.on('participant added', (p) => {
+	setTimeout(function(){
+		owncolor=document.getElementsByClassName('name me')[0].style.backgroundColor
+		console.log(owncolor)
+		}, 10000)
 	ownid = (MPP.client.getOwnParticipant()._id)
 	checkFriendHTML(p._id, p)
 	setTimeout(() => {
@@ -260,20 +264,11 @@ function cBC(object) {
 // PERFORM BUTTON ACTION:
 function buttonClicked(object, num) {
 	if (num === 1) { //HIDES OR SHOWS FRIENDS WINDOW
-		if (msgWindowOpen === false) {
-			cBC(object)
 			if (document.getElementById('friendsWindow-window').style.visibility == "visible") {
 				// CHECKS BUTTON STATUS TO UPDATE IF INCORRECT:
-				if (gBS === true) {
-					object.className = 'ugly-button'
-				}
 				document.getElementById('friendsWindow-window').style.visibility = "hidden";
 			} else {
-				if (gBS === false) {
-					object.className = 'ugly-button translate stuck'
-				}
 				document.getElementById('friendsWindow-window').style.visibility = "visible";
-			}
 		}
 	}
 	if (num === 2) {
@@ -306,7 +301,7 @@ function showObject(visibility, object) {
 
 // -- //
 // UNIVERSAL CREATE DIALOG WINDOW:
-function cDW(object, l, t, h, inner, scroll, visibility) {
+function cDW(object, l, t, h, inner, scroll, id, visibility) {
 	if (typeof visibility !== 'number') {
 		visibility = 0
 	}
@@ -321,6 +316,10 @@ function cDW(object, l, t, h, inner, scroll, visibility) {
 	object.style.marginLeft = (l + 'px');
 	object.style.marginTop = (t + 'px');
 	object.innerHTML = inner;
+	if (id===null || id===undefined){
+		id=(name + "-window")
+	}
+	object.id = id
 	document.getElementsByClassName('relative')[visibility].appendChild(object);
 };
 // -- //
@@ -400,28 +399,90 @@ function updatePlayerInfo() {
 	// }
 }
 //
+let stopStatusDots
+// DETERMINES STATUS OF MESSAGE:
+function messageStatus(status, msgid){
+	let b = document.getElementsByClassName(`Sending_${msgid}`)[0]
+	console.log(document.getElementsByClassName(`Sending_${msgid}`)[0])
+	if (status==='Sent'){
+		b.className=`Sent_${msgid}`;
+		stopStatusDots=true
+		b.childNodes[1].innerHTML = 'Status: Sent';
+		b.childNodes[1].style = 'text-align: right;font-size: 10px;color: lime;';
+	}
+	if (status==='Not Sent'){
+		b.className=`Not_Sent_${msgid}`;
+		stopStatusDots=true
+		b.childNodes[1].innerHTML = 'Status: Not Sent';
+		b.childNodes[1].style = 'text-align: right;font-size: 10px;color: red;';
+	}
+	if (status==='Sending'){
+		s = document.createElement('div')
+		b.appendChild(s)
+		s.id = `status_${ownid}`
+		s.style = 'text-align: right;font-size: 10px;';
+		s.innerHTML = 'Status: Sending';
+		var dots = window.setInterval(function () {
+			if (s.innerHTML.length > 18) {
+				if (stopStatusDots === true) { return }
+				s.innerHTML = "Status: Sending";
+			} else {
+				if (stopStatusDots === true) { return }
+				s.innerHTML += ".";
+			}
+		}, 1000);
+	}
+}
+//
 
 //
 let msgs = [];
 // CREATE MESSAGE POP UPS ON SCREEN
-function createMessageOnScreen(id, msg, verify, color) {
-	let msngerWindow = document.getElementById('messengerWindow-window')
-	console.log(msngerWindow)
+function createMessageOnScreen(id, msg, verify, color, window, msgid) {
+	let msngerWindow
+	console.log(id)
+	console.log(ownid)
+	if (id===ownid){
+	msngerWindow = document.getElementById(window)
+	}else{
+	msngerWindow = document.getElementById(`msgWin_${id}`)
+	}
+	// console.log(msngerWindow)
 	if (msngerWindow === null) {
 		console.log('storing message temporarily')
 		msg.push(id)
 		msg.push(msg)
 		msg.push(verify)
 	} else {
+		// console.log(color)
 		v = document.createElement('div')
-		document.getElementById('messengerWindow-window').appendChild(v)
+		if (id===ownid){
+		document.getElementById(window).appendChild(v)
+		}else{
+		document.getElementById(`msgWin_${id}`).appendChild(v)
+		}
+		if (id===ownid){
 		v.style = `background-color: ${owncolor};color: white;display: block;font-size: 12px;padding-bottom: 10px;padding-left: 10px;padding-right: 10px;`
+		}else{
+			v.style = `background-color: ${color};color: white;display: block;font-size: 12px;padding-bottom: 10px;padding-left: 10px;padding-right: 10px;`
+		}
 		v.innerText = msg
 		v.id = `msg_${id}`
+		if (v.id===`msg_${ownid}`){
+			v.className=`Sending_${msgid}`
+			messageStatus('Sending', msgid)
+		}else{
+			v.className=`Received_${msgid}`;
+		}
 	}
 }
 //
 
+// VISUALLY UPDATES MESSAGE STATUS:
+function updateMessageStatus(){
+
+}
+//
 
 
 // ALLOWS SENDING MESSAGE THROUGH WEBSOCKET:
@@ -429,7 +490,7 @@ function createMessageOnScreen(id, msg, verify, color) {
 let verifyRoom
 let verifyCode
 let authenticationStatus
-function sendMessage(param, msg, playerid) {
+function sendMessage(param, msg, playerid, msgid) {
 	if (param === 'check timeout') {
 		if (clickable === false) {
 			console.log('DO NOT SPAM WEBSOCKET WITH REQUESTS.')
@@ -539,9 +600,8 @@ function sendMessage(param, msg, playerid) {
 			console.log('OPENING WEBSOCKET')
 			ws = new WebSocket(`${WEBSOCKETLOCATION}`);
 			ws.onopen = function () {
-				ws.send(`%${msg}, ${playerid}, ${ownid}`)
+				ws.send(`%${msg}, ${playerid}, ${ownid}, ${msgid}`)
 				ws.onmessage = function (e) {
-					console.log(e.data, 'This is the second one')
 					if (e.data.startsWith('@')) {
 						let data = e.data.split(',')
 						msg = data[0].toString()
@@ -549,25 +609,53 @@ function sendMessage(param, msg, playerid) {
 						msg = msg[1]
 						playerTid = data[1]
 						playerTverify = data[2]
-						playerTcolor = data[3]
+						playerTcolor = e.data.split('-')
+						playerTcolor = playerTcolor[6]
+						// console.log(playerTcolor[6])
 						createMessageOnScreen(playerTid, msg, playerTverify, playerTcolor)
+					}
+					if (e.data.startsWith('PLAYER NOT IN DATABASE. ASK THEM TO USE SCRIPT TO MESSAGE.')) {
+						let data = e.data.split(',')
+						createMessageOnScreen(data[1], data[0], 'true', 'rgb(0, 0, 0)')
+					}
+					if (e.data.startsWith('SENT')) {
+						let data = e.data.split(' ')
+						messageStatus('Sent', data[2])
+					}
+					if (e.data.startsWith('NOT SENT')) {
+						let data = e.data.split(' ')
+						console.log(data[5], data)
+						messageStatus('Not Sent', data[6])
 					}
 				}
 			}
 		} else if (ws.readyState === WebSocket.OPEN) {
 			console.log('WEBSOCKET ALREADY OPEN')
-				ws.send(`%${msg}, ${playerid}, ${ownid}`)
+				ws.send(`%${msg}, ${playerid}, ${ownid}, ${msgid}`)
 				ws.onmessage = function (e) {
 					console.log(e.data)
 					if (e.data.startsWith('@')) {
-						let data = e.data.split(',')
-						msg = data[0].toString()
-						msg = msg.split('%')
-						msg = msg[1]
-						playerTid = data[1]
-						playerTverify = data[2]
-						playerTcolor = data[3]
+						let data = e.data.split('-')
+						msg = data[1]
+						playerTid = data[3]
+						playerTverify = data[4]
+						playerTcolor = e.data.split('-')
+						playerTcolor = playerTcolor[6]
+						// console.log(playerTcolor[6])
 						createMessageOnScreen(playerTid, msg, playerTverify, playerTcolor)
+					}
+					if (e.data.startsWith('PLAYER NOT IN DATABASE. ASK THEM TO USE SCRIPT TO MESSAGE.')) {
+						let data = e.data.split(',')
+						createMessageOnScreen(data[1], data[0], 'true', 'rgb(0, 0, 0)')
+					}
+					if (e.data.startsWith('SENT')) {
+						let data = e.data.split(' ')
+						messageStatus('Sent', data[2])
+					}
+					if (e.data.startsWith('NOT SENT')) {
+						let data = e.data.split(' ')
+						console.log(data[5], data)
+						messageStatus('Not Sent', data[6])
 					}
 				}
 		}else{
@@ -593,6 +681,7 @@ function addClick(object, playerid, p) {
 			button1.addEventListener('click', () => {
 				if (document.getElementById('verifyUserPrompt-window') === null) {
 					if (document.cookie.includes('&verificationStatus=true') === false) {
+
 						sendMessage('check timeout')
 
 						cDW(verifyUserPrompt, '-215', '-693', '400', 'Verify your player ID', 'visibility: visible;overflow-wrap: anywhere')
@@ -638,34 +727,46 @@ function addClick(object, playerid, p) {
 							document.getElementById('verifyUserPrompt-window').remove()
 						};
 					} else {
+						if (document.getElementById(`msgWin_${playerid}`) === null || document.getElementById(`msgWin_${playerid}`) === undefined) {
 						console.log('Opening messenger window')
 						msgWindowOpen = true
 						document.getElementById('friendsWindow-window').style.visibility = 'hidden';
-						cDW(messengerWindow, '500', '-400', '400', tempname, 'overflow: hidden scroll; visibility: visible;font-size: 20px;');
-						document.getElementById('messengerWindow-window').style.color = tempcolor;
+						cDW(messengerWindow, '500', '-400', '400', '', 'overflow: hidden scroll;visibility: visible;font-size: 20px;position: absolute;display: block;height: 400px;margin-left: 500px;margin-top: -400px;color: rgb(43, 53, 218);border-top-width: 42px;', `msgWin_${playerid}`);
+						document.getElementById(`msgWin_${playerid}`).style.color = tempcolor;
+
+
+						let windowName = document.createElement("div")
+						document.getElementById(`msgWin_${playerid}`).appendChild(windowName);
+						windowName.id = `${tempname}_${playerid}`;
+						windowName.style = `position: fixed;height: 47px;width: 420px;background-color: rgb(204 221 204);top: 537px;left: 1461px;`;
+						windowName.innerText = tempname
 
 						let xbutton = document.createElement("a")
-						document.getElementById('messengerWindow-window').appendChild(xbutton);
+						document.getElementById(`msgWin_${playerid}`).appendChild(xbutton);
 						xbutton.className = 'x';
 						xbutton.innerText = 'Ⓧ';
-						xbutton.style = 'color: red;top: 10px;left: 373px;position: absolute;';
+						xbutton.id = `loc_${playerid}`;
+						xbutton.style = 'color: red; position: fixed; left: 1833px; bottom: 408px;';
 						xbutton.onclick = () => {
 							console.log('Close')
+							document.getElementById(`msgWin_${playerid}`).style.visibility= 'hidden';
+							msgWindowOpen=true
+							document.getElementById('friendsWindow-window').style.visibility= 'visible';
 						};
 
 
 						let inputBox = document.createElement("input")
-						document.getElementById('messengerWindow-window').appendChild(inputBox);
+						document.getElementById(`msgWin_${playerid}`).appendChild(inputBox);
 						inputBox.type = 'text';
 						inputBox.name = 'name';
 						inputBox.placeholder = 'Send a message';
 						inputBox.maxlength = '255';
 						inputBox.class = 'translate';
-						inputBox.id = 'msgInput'
-						inputBox.style = 'position: absolute;top: 390px;left: 0px;width: 274px;';
+						inputBox.id = `msgInput_${playerid}`
+						inputBox.style = 'position: fixed;top: 940px;width: 258px;';
 						let msgopen = false
 						document.onmousedown = (evt) => {
-							console.log(evt.target === inputBox)
+							// console.log(evt.target === inputBox)
 							if (evt.target === inputBox) {
 								msgopen = true
 								$("#chat input").focus();
@@ -688,16 +789,21 @@ function addClick(object, playerid, p) {
 						// }
 
 						let sendButton = document.createElement("div")
-						document.getElementById('messengerWindow-window').appendChild(sendButton);
+						document.getElementById(`msgWin_${playerid}`).appendChild(sendButton);
 						sendButton.className = 'ugly-button';
 						sendButton.innerText = 'Send';
-						sendButton.style = 'display: block;position: absolute;visibility: visible;top: 388px;left: 287px;color: white;';
+						sendButton.id=`sendButt_${playerid}`
+						sendButton.style = 'display: block;position: fixed;top: 700;color: white;top: 938px;left: 1740px;';
 						sendButton.onclick = () => {
 							console.log('Send')
-							sendMessage('send message', inputBox.value, playerid, owncolor)
-							createMessageOnScreen(ownid, inputBox.value, 'true', owncolor)
+							let tempmsgid = Math.floor((Math.random() * 1000000000000) + 1);
+							sendMessage('send message', inputBox.value, playerid, tempmsgid)
+							createMessageOnScreen(ownid, inputBox.value, 'true', owncolor, `msgWin_${playerid}`, `${tempmsgid}`)
+							inputBox.value = '';
 						};
-
+					}else{
+						document.getElementById(`msgWin_${playerid}`).style.visibility = 'visible';
+					}
 
 					}
 				}
@@ -911,7 +1017,7 @@ function removeFromPanel(playerid) {
 	// 	}
 	// 	console.log('still wr')
 	//  }, 3000)
-	cDW(friendsWindow, '500', '-400', '400', 'Friends', 'overflow: hidden scroll; visibility: visible');
+	cDW(friendsWindow, '500', '-400', '400', 'Friends', 'overflow: hidden scroll; visibility: visible')
 	cB(friendsButton, '660', '32', 'Friends', 0, 1);
 	cB(socketConnection, '780', '32', 'Connect', 0, 2);
 })();
