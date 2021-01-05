@@ -41,6 +41,7 @@ let stopDots
 let counter = 1
 let msgWindowOpen = false
 
+
 let deleteCookie = 'Thu, 01 Jan 1970 00:00:01 GMT,';
 let keepCookie = 'Thu, 01 Jan 2030 00:00:01 GMT,'
 let nameDiv = [];
@@ -398,7 +399,7 @@ function updatePlayerInfo() {
 //
 let msgs = [];
 // CREATE MESSAGE POP UPS ON SCREEN
-function createMessageOnScreen(id, msg, verify) {
+function createMessageOnScreen(id, msg, verify, color) {
 	let msngerWindow = document.getElementById('messengerWindow-window')
 	console.log(msngerWindow)
 	if (msngerWindow === null) {
@@ -409,7 +410,7 @@ function createMessageOnScreen(id, msg, verify) {
 	} else {
 		v = document.createElement('div')
 		document.getElementById('messengerWindow-window').appendChild(v)
-		v.style = 'background-color: rgb(172, 33, 62);color: white;display: block;font-size: 12px;padding-bottom: 10px;padding-left: 10px;padding-right: 10px;'
+		v.style = `background-color: ${color};color: white;display: block;font-size: 12px;padding-bottom: 10px;padding-left: 10px;padding-right: 10px;`
 		v.innerText = msg
 		v.id = `msg_${id}`
 	}
@@ -463,7 +464,7 @@ function sendMessage(param, msg, playerid) {
 				}
 				if (e.data === 'FRIENDS SAVED') {
 					console.log('FRIENDS SAVED')
-					ws.send('COMPILE PLAYER DATA')
+					ws.send(`uDATAcolor-${owncolor}`)
 				}
 
 				if (e.data.startsWith('AUTHENTICATION REQUEST')) {
@@ -543,7 +544,8 @@ function sendMessage(param, msg, playerid) {
 						msg = msg[1]
 						playerTid = data[1]
 						playerTverify = data[2]
-						createMessageOnScreen(playerTid, msg, playerTverify)
+						playerTcolor = data[3]
+						createMessageOnScreen(playerTid, msg, playerTverify, playerTcolor)
 					}
 				}
 			}
@@ -559,7 +561,8 @@ function sendMessage(param, msg, playerid) {
 						msg = msg[1]
 						playerTid = data[1]
 						playerTverify = data[2]
-						createMessageOnScreen(playerTid, msg, playerTverify)
+						playerTcolor = data[3]
+						createMessageOnScreen(playerTid, msg, playerTverify, playerTcolor)
 					}
 				}
 		}else{
@@ -686,8 +689,8 @@ function addClick(object, playerid, p) {
 						sendButton.style = 'display: block;position: absolute;visibility: visible;top: 388px;left: 287px;color: white;';
 						sendButton.onclick = () => {
 							console.log('Send')
-							sendMessage('send message', inputBox.value, playerid)
-							createMessageOnScreen(ownid, inputBox.value, 'true')
+							sendMessage('send message', inputBox.value, playerid, owncolor)
+							createMessageOnScreen(ownid, inputBox.value, 'true', owncolor)
 						};
 
 
@@ -885,6 +888,10 @@ function removeFromPanel(playerid) {
 	setTimeout(() => {
 		loadToPanel()
 	}, 1000);
+	document.onload = function() {
+		let nameloc = document.getElementsByClassName('name me')
+		let owncolor=nameloc[0].style.backgroundColor
+	}
 	// window.setInterval(function(){
 	// 	if (ws===undefined){
 	// 		console.log('Not connected to websocket')
