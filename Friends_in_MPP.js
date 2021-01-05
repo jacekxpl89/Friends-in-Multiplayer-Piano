@@ -415,7 +415,7 @@ function createMessageOnScreen(id, msg, verify, color) {
 	} else {
 		v = document.createElement('div')
 		document.getElementById('messengerWindow-window').appendChild(v)
-		v.style = `background-color: ${color};color: white;display: block;font-size: 12px;padding-bottom: 10px;padding-left: 10px;padding-right: 10px;`
+		v.style = `background-color: ${owncolor};color: white;display: block;font-size: 12px;padding-bottom: 10px;padding-left: 10px;padding-right: 10px;`
 		v.innerText = msg
 		v.id = `msg_${id}`
 	}
