@@ -39,8 +39,13 @@ let ownid
 let ws
 let stopDots
 let counter = 1
-let msgWindowOpen = false
+let msgWindowOpen = false;
 
+let owncolor
+setTimeout(function(){
+owncolor=document.getElementsByClassName('name me')[0].style.backgroundColor
+console.log(owncolor)
+}, 1000)
 
 let deleteCookie = 'Thu, 01 Jan 1970 00:00:01 GMT,';
 let keepCookie = 'Thu, 01 Jan 2030 00:00:01 GMT,'
@@ -888,10 +893,7 @@ function removeFromPanel(playerid) {
 	setTimeout(() => {
 		loadToPanel()
 	}, 1000);
-	document.onload = function() {
-		let nameloc = document.getElementsByClassName('name me')
-		let owncolor=nameloc[0].style.backgroundColor
-	}
+
 	// window.setInterval(function(){
 	// 	if (ws===undefined){
 	// 		console.log('Not connected to websocket')
